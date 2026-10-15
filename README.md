@@ -1,8 +1,8 @@
 # ΦΠΑ quick calculator — Greek VAT userscript
 
 A small always-available VAT (ΦΠΑ) calculator that lives in the bottom-right corner
-of every page: type an amount and instantly see **Καθαρό / ΦΠΑ / Σύνολο** — for the
-Greek rates **24%, 13%, 6%, 4%**.
+of every page: type an amount and instantly see **Καθαρό / ΦΠΑ / Σύνολο** — for
+**all 27 EU countries** (Greek 24 / 13 / 6 / 4 % by default).
 
 ![screenshot](assets/screenshot.png)
 
@@ -26,8 +26,9 @@ Future versions install themselves: `@updateURL` / `@downloadURL` point at this 
 | Right column | the amount is **χωρίς ΦΠΑ** (net) → `Καθαρό`, `ΦΠΑ`, then the **`Σύνολο`** you are adding up (blue, bottom row) |
 | Highlight | always the result row at the bottom of each column — never the amount you typed |
 | Copy | click any of the six values to copy it as `1234,56` (comma decimal, no symbol) |
-| Rate | selector in the header: 24% (default) / 13% / 6% / 4% |
-| Memory | position, rate and folded state are remembered across pages and sessions |
+| Country | selector next to the rate: all **27 EU member states**, with the markets you order from on top (Ελλάδα, Γερμανία, Ιταλία, Ισπανία, Γαλλία, Ολλανδία, Πολωνία) |
+| Rate | follows the country — its standard rate first, then that country's reduced rates (Ελλάδα: 24 / 13 / 6 / 4 %) |
+| Memory | position, country, rate and folded state are remembered across pages and sessions |
 
 ### Keyboard
 
@@ -60,11 +61,27 @@ immediately.
 Edit the constants at the top of the script:
 
 ```js
-const RATES = [24, 13, 6, 4];               // κλιμακωτοί συντελεστές ΦΠΑ
-const DEFAULT_RATE = 24;
-const HOTKEY = { alt: true, code: 'KeyQ' }; // Alt+Q
-const QUICK_TYPE = true;                    // type-a-digit-anywhere
+const EU = [ ['AT', 'Αυστρία', 20, [13, 10]], /* … 27 entries … */ ];
+const TOP = ['GR', 'DE', 'IT', 'ES', 'FR', 'NL', 'PL'];  // first in the country list
+const HOTKEY = { alt: true, code: 'KeyQ' };              // Alt+Q
+const QUICK_TYPE = true;                                 // type-a-digit-anywhere
 ```
+
+## Countries & rates
+
+Standard rates, as of **January 2026** (source: EU tables — TEDB / European Commission):
+
+| | | | | | |
+|---|---|---|---|---|---|
+| AT 20 | BE 21 | BG 20 | HR 25 | CY 19 | CZ 21 |
+| DK 25 | EE 24 | FI 25.5 | FR 20 | DE 19 | GR 24 |
+| HU 27 | IE 23 | IT 22 | LV 21 | LT 21 | LU 17 |
+| MT 18 | NL 21 | PL 23 | PT 23 | RO 21 | SK 23 |
+| SI 22 | ES 21 | SE 25 | | | |
+
+Reduced rates (also in the dropdown, grey-text extras such as 2.1 % FR / 3 % LU / 4 % ES-IT)
+apply only to specific goods and services — check locally when it matters. Selecting a
+country resets the rate to that country's standard rate.
 
 ## Development
 

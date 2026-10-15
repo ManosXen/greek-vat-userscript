@@ -2,7 +2,7 @@
 // @name         ΦΠΑ quick calculator (Greek VAT 24/13/6/4%)
 // @name:en      Greek VAT quick calculator
 // @namespace    axynos.local.fpa
-// @version      1.1.0
+// @version      1.2.0
 // @description  Μικρή αριθμομηχανή ΦΠΑ κάτω δεξιά σε κάθε σελίδα: γράψε ένα ποσό και βλέπεις αμέσως Καθαρό / ΦΠΑ / Σύνολο (και με τους δύο τρόπους). Alt+Q εστιάζει το πεδίο, κλικ σε μια τιμή την αντιγράφει.
 // @author       Anastasios Xynos (tasosxynos)
 // @license      MIT
@@ -21,14 +21,50 @@
   'use strict';
 
   // ─── ρυθμίσεις (πείραξέ τες ελεύθερα) ──────────────────────────────────────
-  const RATES = [24, 13, 6, 4];            // διαθέσιμοι συντελεστές ΦΠΑ
-  const DEFAULT_RATE = 24;                 // προεπιλογή 24%
+  // Χώρες ΕΕ και συντελεστές: πίνακας EU (πιο κάτω, region: pure)
   const HOTKEY = { alt: true, code: 'KeyQ' }; // Alt+Q → εστίαση στο ποσό
   const QUICK_TYPE = true;                 // γράψε ένα ψηφίο σε σελίδα (χωρίς focus κάπου) → πάει στο πεδίο
 
   if (document.getElementById('fpa-quick-calc')) return; // no double injection
 
   // #region pure
+  // ─── ΦΠΑ στην ΕΕ: [κωδικός, χώρα, βασικός συντελεστής, [μειωμένοι]] ───────
+  // Κατάσταση: Ιαν 2026. Ο βασικός είναι αυτός που ζητάς συνήθως· οι μειωμένοι
+  // ισχύουν μόνο για συγκεκριμένα αγαθά/υπηρεσίες (και τα πολύ χαμηλά, π.χ. 2,1%
+  // Γαλλία / 3% Λουξεμβούργο / 4% Ισπανία-Ιταλία, είναι «υπέρ-μειωμένοι»).
+  // Πηγή: πίνακες ΕΕ (TEDB / taxation-customs.ec.europa.eu).
+  const EU = [
+    ['AT', 'Αυστρία', 20, [13, 10]],
+    ['BE', 'Βέλγιο', 21, [12, 6]],
+    ['BG', 'Βουλγαρία', 20, [9]],
+    ['FR', 'Γαλλία', 20, [10, 5.5, 2.1]],
+    ['DE', 'Γερμανία', 19, [7]],
+    ['DK', 'Δανία', 25, []],
+    ['GR', 'Ελλάδα', 24, [13, 6, 4]],
+    ['EE', 'Εσθονία', 24, [13, 9]],
+    ['IE', 'Ιρλανδία', 23, [13.5, 9, 4.8]],
+    ['ES', 'Ισπανία', 21, [10, 4]],
+    ['IT', 'Ιταλία', 22, [10, 5, 4]],
+    ['HR', 'Κροατία', 25, [13, 5]],
+    ['CY', 'Κύπρος', 19, [9, 5]],
+    ['LV', 'Λετονία', 21, [12, 5]],
+    ['LT', 'Λιθουανία', 21, [12, 5]],
+    ['LU', 'Λουξεμβούργο', 17, [14, 8, 3]],
+    ['MT', 'Μάλτα', 18, [7, 5]],
+    ['NL', 'Ολλανδία', 21, [9]],
+    ['HU', 'Ουγγαρία', 27, [18, 5]],
+    ['PL', 'Πολωνία', 23, [8, 5]],
+    ['PT', 'Πορτογαλία', 23, [13, 6]],
+    ['RO', 'Ρουμανία', 21, [11]],
+    ['SK', 'Σλοβακία', 23, [19, 5]],
+    ['SI', 'Σλοβενία', 22, [9.5, 5]],
+    ['SE', 'Σουηδία', 25, [12, 6]],
+    ['CZ', 'Τσεχία', 21, [12]],
+    ['FI', 'Φινλανδία', 25.5, [14, 10]],
+  ];
+  // σειρά των «συχνών αγορών» στην κορυφή της λίστας (Ελλάδα + μεγάλες αγορές)
+  const TOP = ['GR', 'DE', 'IT', 'ES', 'FR', 'NL', 'PL'];
+
   // ─── αριθμοί: ελληνική σύμβαση — ',' δεκαδικό, '.' χιλιάδες ──────────────
   function parseAmount(raw) {
     if (raw == null) return NaN;
@@ -105,7 +141,8 @@
     select { background: rgba(255,255,255,.08); color: #e6e9ee; font-size: 11px; padding: 1px 2px;
              border: 1px solid rgba(255,255,255,.18); border-radius: 5px; }
     header .grow { flex: 1 1 auto; }
-    header .hint { color: #8b93a1; font-size: 10px; }
+    #cc { max-width: 118px; }
+    #rate { flex: 0 0 auto; }
     header button { background: transparent; border: 0; color: #8b93a1; font-size: 14px; line-height: 1;
                     padding: 2px 6px; border-radius: 5px; cursor: pointer; }
     header button:hover { background: rgba(255,255,255,.12); color: #fff; }
@@ -142,11 +179,9 @@
       <header id="hdr">
         <span class="dot"></span>
         <span class="title">ΦΠΑ</span>
-        <select id="rate" title="συντελεστής ΦΠΑ">
-          ${RATES.map((r) => `<option value="${r}"${r === DEFAULT_RATE ? ' selected' : ''}>${r}%</option>`).join('')}
-        </select>
+        <select id="cc" title="χώρα"></select>
+        <select id="rate" title="συντελεστής ΦΠΑ"></select>
         <span class="grow"></span>
-        <span class="hint">Alt+Q</span>
         <button id="fold" title="σύμπτυξη">–</button>
       </header>
       <div class="body">
@@ -176,7 +211,7 @@
 
   const $ = (id) => sh.getElementById(id);
   const wrap = sh.querySelector('.wrap');
-  const amt = $('amt'), rateSel = $('rate'), parsedEl = $('parsed');
+  const amt = $('amt'), ccSel = $('cc'), rateSel = $('rate'), parsedEl = $('parsed');
   // η μπλε γραμμή = το ζητούμενο ποσό κάθε στήλης:
   //  αριστερά (το ποσό είναι με ΦΠΑ)  → Καθαρό (αφαιρείται ο ΦΠΑ)
   //  δεξιά    (το ποσό είναι χωρίς ΦΠΑ) → Σύνολο (προστίθεται ο ΦΠΑ)
@@ -187,12 +222,49 @@
   ];
   let current = {};
 
+  const ratesOf = (cc) => {
+    const c = EU.find((x) => x[0] === cc) || EU.find((x) => x[0] === 'GR');
+    return [c[2], ...c[3]];
+  };
+  const nameOf = (cc) => (EU.find((c) => c[0] === cc) || [null, 'Ελλάδα'])[1];
+  const currentRate = () => {
+    const v = Number(rateSel.value);
+    return Number.isFinite(v) && v > 0 ? v : ratesOf(ccSel.value)[0];
+  };
+  const rateLabel = (r) => String(r).replace('.', ',') + '%';
+
+  function makeOption(value, text) {
+    const o = document.createElement('option');
+    o.value = value;
+    o.textContent = text;
+    return o;
+  }
+
+  function buildCountrySelect() {
+    const inTop = new Set(TOP);
+    const gTop = document.createElement('optgroup');
+    gTop.label = 'Συχνές αγορές';
+    TOP.forEach((cc) => { if (EU.some((c) => c[0] === cc)) gTop.appendChild(makeOption(cc, nameOf(cc))); });
+    const gRest = document.createElement('optgroup');
+    gRest.label = 'Λοιπές χώρες ΕΕ';
+    EU.forEach((c) => { if (!inTop.has(c[0])) gRest.appendChild(makeOption(c[0], c[1])); });
+    ccSel.append(gTop, gRest);
+  }
+
+  function buildRateSelect(keepRate) {
+    const rates = ratesOf(ccSel.value);
+    const prev = keepRate ? Number(rateSel.value) : NaN;
+    rateSel.textContent = '';
+    rates.forEach((r) => rateSel.appendChild(makeOption(String(r), rateLabel(r))));
+    rateSel.value = rates.includes(prev) ? String(prev) : String(rates[0]);
+  }
+
   function render() {
     const raw = amt.value;
     const v = parseAmount(raw);
     const ok = Number.isFinite(v);
     const hasInput = raw.trim() !== '';
-    parsedEl.textContent = ok ? '= ' + fmtEUR(v) : (hasInput ? 'δεν αναγνωρίζεται' : '');
+    parsedEl.textContent = ok ? '= ' + fmtEUR(v) : (hasInput ? 'δεν αναγνωρίζεται' : 'Alt+Q');
     parsedEl.classList.toggle('bad', hasInput && !ok);
     if (!ok) {
       current = {};
@@ -203,7 +275,7 @@
       }
       return;
     }
-    const b = blocks(v, Number(rateSel.value) || DEFAULT_RATE);
+    const b = blocks(v, currentRate());
     current = {
       wnet: b.withVat.net, wvat: b.withVat.vat, wtot: b.withVat.total,
       nnet: b.noVat.net, nvat: b.noVat.vat, ntot: b.noVat.total,
@@ -297,6 +369,12 @@
   );
   amt.addEventListener('blur', () => { if (!wrap.matches(':hover')) amt.setSelectionRange(0, 0); });
   $('clr').addEventListener('click', () => { amt.value = ''; render(); amt.focus(); });
+  ccSel.addEventListener('change', () => {
+    sset('cc', ccSel.value);
+    buildRateSelect(false);                      // νέα χώρα → ο βασικός της συντελεστής
+    sset('rate', Number(rateSel.value));
+    render();
+  });
   rateSel.addEventListener('change', () => { sset('rate', Number(rateSel.value)); render(); });
   $('fold').addEventListener('click', () => setOpen(!wrap.classList.contains('open')));
   sh.querySelectorAll('.row').forEach((row) =>
@@ -336,8 +414,12 @@
     host.style.display = document.fullscreenElement ? 'none' : '';
   });
 
-  const savedRate = Number(sget('rate', DEFAULT_RATE));
-  if (RATES.includes(savedRate)) rateSel.value = String(savedRate);
+  const savedRate = Number(sget('rate', NaN));
+  buildCountrySelect();
+  const savedCc = String(sget('cc', 'GR'));
+  ccSel.value = EU.some((c) => c[0] === savedCc) ? savedCc : 'GR';
+  buildRateSelect(true);
+  if (ratesOf(ccSel.value).includes(savedRate)) rateSel.value = String(savedRate);
   setOpen(sget('open', true) !== false, false);
   if (sget('x', null) != null && sget('y', null) != null) place(sget('x', 0), sget('y', 0));
   render();
