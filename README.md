@@ -1,4 +1,4 @@
-# ΦΠΑ quick calculator — Greek VAT userscript
+# QuickVAT — ΦΠΑ / EU VAT userscript
 
 A small always-available VAT (ΦΠΑ) calculator that lives in the bottom-right corner
 of every page: type an amount and instantly see **Καθαρό / ΦΠΑ / Σύνολο** — for

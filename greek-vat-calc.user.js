@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         ΦΠΑ quick calculator (Greek VAT 24/13/6/4%)
-// @name:en      Greek VAT quick calculator
+// @name         QuickVAT
+// @name:en      QuickVAT
 // @namespace    axynos.local.fpa
-// @version      1.3.1
-// @description  Μικρή αριθμομηχανή ΦΠΑ κάτω δεξιά σε κάθε σελίδα: γράψε ένα ποσό και βλέπεις αμέσως Καθαρό / ΦΠΑ / Σύνολο (και με τους δύο τρόπους). Alt+Q εστιάζει το πεδίο, κλικ σε μια τιμή την αντιγράφει.
+// @version      1.4.0
+// @description  Αριθμομηχανή ΦΠΑ (Ελλάδα + όλη η ΕΕ) κάτω δεξιά σε κάθε σελίδα: γράψε ένα ποσό και βλέπεις αμέσως Καθαρό / ΦΠΑ / Σύνολο (και με τους δύο τρόπους). Alt+Q εστιάζει το πεδίο, κλικ σε μια τιμή την αντιγράφει.
 // @author       Anastasios Xynos (tasosxynos)
 // @license      MIT
 // @homepageURL  https://github.com/tasosxynos/greek-vat-userscript
@@ -144,7 +144,7 @@
     :host { all: initial; }
     .wrap, .wrap * { box-sizing: border-box; margin: 0; padding: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
     .wrap {
-      position: fixed; right: 12px; bottom: 12px; z-index: 2147483647;
+      position: fixed; right: 12px; bottom: 12px; z-index: 2147483646;   /* κάτω από το QuickLimits, πάνω από την υπόλοιπη σελίδα */
       font-size: 12px; line-height: 1.4; color: #e6e9ee; text-align: left; direction: ltr;
     }
     .panel {
