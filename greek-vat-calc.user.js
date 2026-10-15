@@ -2,7 +2,7 @@
 // @name         ΦΠΑ quick calculator (Greek VAT 24/13/6/4%)
 // @name:en      Greek VAT quick calculator
 // @namespace    axynos.local.fpa
-// @version      1.3.0
+// @version      1.3.1
 // @description  Μικρή αριθμομηχανή ΦΠΑ κάτω δεξιά σε κάθε σελίδα: γράψε ένα ποσό και βλέπεις αμέσως Καθαρό / ΦΠΑ / Σύνολο (και με τους δύο τρόπους). Alt+Q εστιάζει το πεδίο, κλικ σε μια τιμή την αντιγράφει.
 // @author       Anastasios Xynos (tasosxynos)
 // @license      MIT
@@ -337,31 +337,35 @@
     wrap.style.top = y + 'px';
     wrap.style.right = 'auto';
     wrap.style.bottom = 'auto';
+    customPos = true;                      // θέση διαλεγμένη με το χέρι → μένει εκεί
   }
   function savePos() {
     sset('x', parseFloat(wrap.style.left) || 0);
     sset('y', parseFloat(wrap.style.top) || 0);
   }
-  // Η πάνω-αριστερή γωνία μένει σταθερή: συμπτυσσόμενο δεν «πέφτει» κάτω, και
-  // ξανανοίγει ακριβώς στη θέση που ήταν (χωρίς να το σέρνεις με το χέρι).
+  // Δύο περιπτώσεις:
+  //  • προεπιλεγμένη θέση (κολλημένο κάτω δεξιά): η μπάρα πάει στην άκρη όταν συμπτύσσεται
+  //    και το πλαίσιο ανοίγει προς τα πάνω — όπως «πρωτόγονα» δούλευε.
+  //  • θέση που διάλεξες με το χέρι: η πάνω-αριστερή γωνία μένει σταθερή, δεν σου φεύγει.
   function setOpen(open, save) {
     if (open !== wrap.classList.contains('open')) {
-      const r = wrap.getBoundingClientRect();
       wrap.classList.toggle('open', open);
-      wrap.style.left = r.left + 'px';
-      wrap.style.top = r.top + 'px';
-      wrap.style.right = 'auto';
-      wrap.style.bottom = 'auto';
-      const n = wrap.getBoundingClientRect();            // να μη βγει έξω από την οθόνη
-      if (n.bottom > window.innerHeight - 4) wrap.style.top = Math.max(0, window.innerHeight - n.height - 12) + 'px';
-      if (n.right > window.innerWidth - 4) wrap.style.left = Math.max(0, window.innerWidth - n.width - 12) + 'px';
+      if (customPos) {
+        const r = wrap.getBoundingClientRect();
+        wrap.style.left = r.left + 'px';
+        wrap.style.top = r.top + 'px';
+        const n = wrap.getBoundingClientRect();          // να μη βγει έξω από την οθόνη
+        if (n.bottom > window.innerHeight - 4) wrap.style.top = Math.max(0, window.innerHeight - n.height - 12) + 'px';
+        if (n.right > window.innerWidth - 4) wrap.style.left = Math.max(0, window.innerWidth - n.width - 12) + 'px';
+      }
+      if (save !== false) sset('open', open);
     }
     $('fold').textContent = open ? '–' : '+';
-    if (save !== false) sset('open', open);
   }
 
   const isShop = () => isShopHost(location.hostname);
   let autoFolded = false;                    // η τελευταία σύμπτυξη ήταν αυτόματη (όχι επιλογή σου)
+  let customPos = sget('x', null) != null && sget('y', null) != null;   // το έχεις μετακινήσει εσύ
 
   function openAndFocus() {
     autoFolded = false;
@@ -399,6 +403,17 @@
     drag = null;
     if (moved) savePos();
     else { autoFolded = false; setOpen(!wrap.classList.contains('open')); }  // απλό κλικ στην μπάρα = άνοιξε/κλείσε
+  });
+  // διπλό κλικ στην μπάρα → πίσω στην προεπιλεγμένη θέση (κάτω δεξιά)
+  $('hdr').addEventListener('dblclick', (e) => {
+    if (e.target.closest('select,button')) return;
+    customPos = false;
+    sset('x', null);
+    sset('y', null);
+    wrap.style.left = '';
+    wrap.style.top = '';
+    wrap.style.right = '';
+    wrap.style.bottom = '';
   });
   window.addEventListener('resize', () => {
     if (wrap.style.left) place(parseFloat(wrap.style.left), parseFloat(wrap.style.top));

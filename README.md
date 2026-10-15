@@ -20,7 +20,7 @@ Future versions install themselves: `@updateURL` / `@downloadURL` point at this 
 
 | | |
 |---|---|
-| Panel | fixed bottom-right on every http(s) page, draggable by its header, collapsible to a pill that stays exactly where the bar was |
+| Panel | fixed bottom-right on every http(s) page, draggable by its header; minimizing returns it to the bottom-right corner, while a position you dragged to is kept (double-click the bar to re-dock) |
 | Input | type any amount; both readings are shown at once, no mode switching |
 | Left column | the amount is **με ΦΠΑ** (gross) → `ΦΠΑ`, `Σύνολο`, then the **`Καθαρό`** you are extracting (blue, bottom row) |
 | Right column | the amount is **χωρίς ΦΠΑ** (net) → `Καθαρό`, `ΦΠΑ`, then the **`Σύνολο`** you are adding up (blue, bottom row) |
@@ -37,6 +37,7 @@ Future versions install themselves: `@updateURL` / `@downloadURL` point at this 
 | `Alt+Q` | focus the amount field (opens the panel if folded) |
 | any digit (nothing focused on the page) | jumps straight into the amount field and types it |
 | `Esc` | leave the field |
+| double-click the bar | back to the default bottom-right corner |
 
 ### Where it opens by itself
 
