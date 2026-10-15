@@ -20,7 +20,7 @@ Future versions install themselves: `@updateURL` / `@downloadURL` point at this 
 
 | | |
 |---|---|
-| Panel | fixed bottom-right on every http(s) page, draggable by its header, collapsible to a pill |
+| Panel | fixed bottom-right on every http(s) page, draggable by its header, collapsible to a pill that stays exactly where the bar was |
 | Input | type any amount; both readings are shown at once, no mode switching |
 | Left column | the amount is **με ΦΠΑ** (gross) → `ΦΠΑ`, `Σύνολο`, then the **`Καθαρό`** you are extracting (blue, bottom row) |
 | Right column | the amount is **χωρίς ΦΠΑ** (net) → `Καθαρό`, `ΦΠΑ`, then the **`Σύνολο`** you are adding up (blue, bottom row) |
@@ -28,7 +28,7 @@ Future versions install themselves: `@updateURL` / `@downloadURL` point at this 
 | Copy | click any of the six values to copy it as `1234,56` (comma decimal, no symbol) |
 | Country | selector next to the rate: all **27 EU member states**, with the markets you order from on top (Ελλάδα, Γερμανία, Ιταλία, Ισπανία, Γαλλία, Ολλανδία, Πολωνία) |
 | Rate | follows the country — its standard rate first, then that country's reduced rates (Ελλάδα: 24 / 13 / 6 / 4 %) |
-| Memory | position, country, rate and folded state are remembered across pages and sessions |
+| Memory | position, country and rate are remembered; folded/expanded follows the site (below) |
 
 ### Keyboard
 
@@ -37,6 +37,21 @@ Future versions install themselves: `@updateURL` / `@downloadURL` point at this 
 | `Alt+Q` | focus the amount field (opens the panel if folded) |
 | any digit (nothing focused on the page) | jumps straight into the amount field and types it |
 | `Esc` | leave the field |
+
+### Where it opens by itself
+
+The panel **starts minimized** everywhere, and unfolds by itself only on shopping sites, so
+it never covers a page you are just reading:
+
+- **e-shops it opens on:** Skroutz, BestPrice, e-shop.gr, Plaisio, Kotsovolos, Public,
+  MediaMarkt, Germanos, You, Shopflix, Amazon (every Amazon domain), eBay, AliExpress, Temu,
+  Shein, Zalando, IKEA, Saturn, Decathlon, Alibaba, Banggood, Walmart, Etsy, Zara.
+- Switch to a **non-shop tab** and it folds itself back to the pill; land back on a shop page
+  and it reopens. Fold it yourself and it stays folded, as you left it.
+- Typing a digit on a page (nothing focused) opens it *and* starts the amount; `Alt+Q` always
+  opens and focuses it.
+- Add your own shop by appending its domain to `SHOPS` in the script: `'myshop.gr'`, or
+  `'brand.'` to match every TLD of `brand`.
 
 While the caret is in the amount field, keystrokes are stopped from propagating, so
 page shortcuts (YouTube, Gmail, …) never fire.

@@ -2,7 +2,7 @@
 // @name         ΦΠΑ quick calculator (Greek VAT 24/13/6/4%)
 // @name:en      Greek VAT quick calculator
 // @namespace    axynos.local.fpa
-// @version      1.2.0
+// @version      1.3.0
 // @description  Μικρή αριθμομηχανή ΦΠΑ κάτω δεξιά σε κάθε σελίδα: γράψε ένα ποσό και βλέπεις αμέσως Καθαρό / ΦΠΑ / Σύνολο (και με τους δύο τρόπους). Alt+Q εστιάζει το πεδίο, κλικ σε μια τιμή την αντιγράφει.
 // @author       Anastasios Xynos (tasosxynos)
 // @license      MIT
@@ -65,6 +65,23 @@
   // σειρά των «συχνών αγορών» στην κορυφή της λίστας (Ελλάδα + μεγάλες αγορές)
   const TOP = ['GR', 'DE', 'IT', 'ES', 'FR', 'NL', 'PL'];
 
+  // ─── e-shops: αναγνώριση από το domain (πρόσθεσε ό,τι άλλο θέλεις) ────────
+  // Ό,τι τελειώνει σε '.' σημαίνει «κάθε κατάληξη»: 'amazon.' → amazon.de, amazon.co.uk …
+  const SHOPS = [
+    // Ελληνικά
+    'skroutz.gr', 'bestprice.gr', 'e-shop.gr', 'plaisio.gr', 'kotsovolos.gr',
+    'public.gr', 'mediamarkt.gr', 'germanos.gr', 'you.gr', 'shopflix.gr',
+    // Διεθνή
+    'amazon.', 'ebay.', 'aliexpress.', 'temu.', 'shein.', 'zalando.', 'ikea.',
+    'mediamarkt.', 'saturn.de', 'decathlon.', 'alibaba.com', 'banggood.com',
+    'walmart.com', 'etsy.com', 'zara.com',
+  ];
+  const SHOP_RES = SHOPS.map((s) => new RegExp('(^|\\.)' + s.replace(/\./g, '\\.') + (s.endsWith('.') ? '' : '$'), 'i'));
+  function isShopHost(host) {
+    const h = String(host || '').toLowerCase();
+    return SHOP_RES.some((re) => re.test(h));
+  }
+
   // ─── αριθμοί: ελληνική σύμβαση — ',' δεκαδικό, '.' χιλιάδες ──────────────
   function parseAmount(raw) {
     if (raw == null) return NaN;
@@ -120,6 +137,7 @@
   // ─── UI ───────────────────────────────────────────────────────────────────
   const host = document.createElement('div');
   host.id = 'fpa-quick-calc';
+  host.style.visibility = 'hidden';          // εμφανίζεται στο τέλος, αφού μπει στη σωστή θέση
   const sh = host.attachShadow({ mode: 'open' });
   sh.innerHTML = `
   <style>
@@ -159,7 +177,7 @@
     #clr { flex: 0 0 auto; width: 26px; background: rgba(255,255,255,.08); color: #b9c1cc;
            border: 1px solid rgba(255,255,255,.2); border-radius: 6px; font-size: 14px; cursor: pointer; }
     #clr:hover { color: #fff; background: rgba(255,255,255,.16); }
-    .parsed { color: #8b93a1; font-size: 11px; padding: 3px 2px 6px; font-variant-numeric: tabular-nums; }
+    .parsed { color: #8b93a1; font-size: 11px; padding: 3px 2px 6px; min-height: 15px; font-variant-numeric: tabular-nums; }
     .parsed.bad { color: #ff9b9b; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
     .col { border: 1px solid rgba(255,255,255,.12); border-radius: 8px; padding: 4px 5px 5px; }
@@ -324,14 +342,42 @@
     sset('x', parseFloat(wrap.style.left) || 0);
     sset('y', parseFloat(wrap.style.top) || 0);
   }
+  // Η πάνω-αριστερή γωνία μένει σταθερή: συμπτυσσόμενο δεν «πέφτει» κάτω, και
+  // ξανανοίγει ακριβώς στη θέση που ήταν (χωρίς να το σέρνεις με το χέρι).
   function setOpen(open, save) {
-    wrap.classList.toggle('open', open);
+    if (open !== wrap.classList.contains('open')) {
+      const r = wrap.getBoundingClientRect();
+      wrap.classList.toggle('open', open);
+      wrap.style.left = r.left + 'px';
+      wrap.style.top = r.top + 'px';
+      wrap.style.right = 'auto';
+      wrap.style.bottom = 'auto';
+      const n = wrap.getBoundingClientRect();            // να μη βγει έξω από την οθόνη
+      if (n.bottom > window.innerHeight - 4) wrap.style.top = Math.max(0, window.innerHeight - n.height - 12) + 'px';
+      if (n.right > window.innerWidth - 4) wrap.style.left = Math.max(0, window.innerWidth - n.width - 12) + 'px';
+    }
     $('fold').textContent = open ? '–' : '+';
     if (save !== false) sset('open', open);
   }
+
+  const isShop = () => isShopHost(location.hostname);
+  let autoFolded = false;                    // η τελευταία σύμπτυξη ήταν αυτόματη (όχι επιλογή σου)
+
   function openAndFocus() {
+    autoFolded = false;
     setOpen(true);
     amt.focus();
+  }
+
+  // Στις μη-e-shop σελίδες το πλαίσιο μένει συμπτυγμένο — και ξανά, όποτε αλλάζεις καρτέλα.
+  function applyContext() {
+    if (sh.activeElement === amt) return;    // γράφεις στο πεδίο — μην σου το κλείσει
+    if (isShop()) {
+      if (autoFolded) { autoFolded = false; setOpen(true, false); }
+    } else {
+      if (wrap.classList.contains('open')) setOpen(false, false);
+      autoFolded = true;
+    }
   }
 
   let drag = null;
@@ -352,7 +398,7 @@
     const moved = drag.moved;
     drag = null;
     if (moved) savePos();
-    else setOpen(!wrap.classList.contains('open'));   // απλό κλικ στην μπάρα = άνοιξε/κλείσε
+    else { autoFolded = false; setOpen(!wrap.classList.contains('open')); }  // απλό κλικ στην μπάρα = άνοιξε/κλείσε
   });
   window.addEventListener('resize', () => {
     if (wrap.style.left) place(parseFloat(wrap.style.left), parseFloat(wrap.style.top));
@@ -376,7 +422,7 @@
     render();
   });
   rateSel.addEventListener('change', () => { sset('rate', Number(rateSel.value)); render(); });
-  $('fold').addEventListener('click', () => setOpen(!wrap.classList.contains('open')));
+  $('fold').addEventListener('click', () => { autoFolded = false; setOpen(!wrap.classList.contains('open')); });
   sh.querySelectorAll('.row').forEach((row) =>
     row.addEventListener('click', () => {
       const k = row.dataset.k;
@@ -400,8 +446,8 @@
       if (e.ctrlKey || e.altKey || e.metaKey || e.defaultPrevented) return;
       if (e.target !== document.body) return;               // κάτι άλλο έχει focus
       if (!/^[0-9]$/.test(e.key) && e.key !== ',' && e.key !== '.') return;
-      if (!wrap.classList.contains('open')) return;
       e.preventDefault();
+      if (!wrap.classList.contains('open')) { autoFolded = false; setOpen(true, false); }  // ανοίγει και γράφει
       amt.focus();
       amt.value += e.key;
       render();
@@ -420,7 +466,13 @@
   ccSel.value = EU.some((c) => c[0] === savedCc) ? savedCc : 'GR';
   buildRateSelect(true);
   if (ratesOf(ccSel.value).includes(savedRate)) rateSel.value = String(savedRate);
-  setOpen(sget('open', true) !== false, false);
+  render();                                          // γέμισε το πλαίσιο πριν μετρηθεί η θέση
+  // Ξεκινάει συμπτυγμένο παντού, ανοιχτό μόνο σε e-shop (Skroutz, bestprice, Amazon…).
+  if (isShop()) { autoFolded = false; setOpen(sget('open', true) !== false, false); }
+  else { setOpen(false, false); autoFolded = true; }
   if (sget('x', null) != null && sget('y', null) != null) place(sget('x', 0), sget('y', 0));
-  render();
+  host.style.visibility = '';                       // φαίνεται μόνο αφού τακτοποιηθεί η θέση
+  // αλλαγή καρτέλας / επιστροφή στο παράθυρο → ξανά συμπτυγμένο στις μη-e-shop σελίδες
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) applyContext(); });
+  window.addEventListener('focus', applyContext);
 })();

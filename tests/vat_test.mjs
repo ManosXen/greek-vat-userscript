@@ -7,8 +7,8 @@ const src = fs.readFileSync(SRC, 'utf8');
 const m = src.match(/\/\/ #region pure([\s\S]*?)\/\/ #endregion pure/);
 if (!m) { console.error('pure region not found in', SRC.pathname); process.exit(2); }
 
-const { parseAmount, r2, fmtEUR, fmtPlain, blocks, EU, TOP } = new Function(
-  m[1] + '\nreturn { parseAmount, r2, fmtEUR, fmtPlain, blocks, EU, TOP };'
+const { parseAmount, r2, fmtEUR, fmtPlain, blocks, EU, TOP, isShopHost } = new Function(
+  m[1] + '\nreturn { parseAmount, r2, fmtEUR, fmtPlain, blocks, EU, TOP, isShopHost };'
 )();
 
 let pass = 0, fail = 0;
@@ -97,6 +97,27 @@ eqs('RO 21',          byCc.RO[2], 21);
 eqs('SK 23',          byCc.SK[2], 23);
 eqs('HU highest (27)', Math.max(...EU.map((c) => c[2])), 27);
 eqs('LU lowest (17)',  Math.min(...EU.map((c) => c[2])), 17);
+
+// ── e-shop detection ────────────────────────────────────────────────────────
+eqs('shop www.skroutz.gr',    isShopHost('www.skroutz.gr'), true);
+eqs('shop bestprice.gr',      isShopHost('bestprice.gr'), true);
+eqs('shop www.e-shop.gr',     isShopHost('www.e-shop.gr'), true);
+eqs('shop skroutz.gr apex',   isShopHost('skroutz.gr'), true);
+eqs('shop www.amazon.de',     isShopHost('www.amazon.de'), true);
+eqs('shop smile.amazon.co.uk', isShopHost('smile.amazon.co.uk'), true);
+eqs('shop de.aliexpress.com', isShopHost('de.aliexpress.com'), true);
+eqs('shop www.temu.com',      isShopHost('www.temu.com'), true);
+eqs('shop www.ikea.gr',       isShopHost('www.ikea.gr'), true);
+eqs('shop www.mediamarkt.de', isShopHost('www.mediamarkt.de'), true);
+eqs('not shop example.com',   isShopHost('example.com'), false);
+eqs('not shop 127.0.0.1',     isShopHost('127.0.0.1'), false);
+eqs('not shop medium.com',    isShopHost('medium.com'), false);
+eqs('not shop google.gr',     isShopHost('www.google.gr'), false);
+eqs('not shop notaskroutz.gr', isShopHost('notaskroutz.gr'), false);
+eqs('not shop amazonia.com',  isShopHost('amazonia.com'), false);
+eqs('not shop my-amazon.de',  isShopHost('my-amazon.de'), false);
+eqs('not shop empty',         isShopHost(''), false);
+eqs('not shop undefined',     isShopHost(undefined), false);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
