@@ -22,9 +22,9 @@ Future versions install themselves: `@updateURL` / `@downloadURL` point at this 
 |---|---|
 | Panel | fixed bottom-right on every http(s) page, draggable by its header, collapsible to a pill |
 | Input | type any amount; both readings are shown at once, no mode switching |
-| Left column | the amount is **με ΦΠΑ** (gross) → Καθαρό + ΦΠΑ |
-| Right column | the amount is **χωρίς ΦΠΑ** (net) → ΦΠΑ + Σύνολο |
-| Highlight | the figure you typed is highlighted in blue in both columns |
+| Left column | the amount is **με ΦΠΑ** (gross) → `ΦΠΑ`, `Σύνολο`, then the **`Καθαρό`** you are extracting (blue, bottom row) |
+| Right column | the amount is **χωρίς ΦΠΑ** (net) → `Καθαρό`, `ΦΠΑ`, then the **`Σύνολο`** you are adding up (blue, bottom row) |
+| Highlight | always the result row at the bottom of each column — never the amount you typed |
 | Copy | click any of the six values to copy it as `1234,56` (comma decimal, no symbol) |
 | Rate | selector in the header: 24% (default) / 13% / 6% / 4% |
 | Memory | position, rate and folded state are remembered across pages and sessions |

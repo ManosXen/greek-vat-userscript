@@ -2,7 +2,7 @@
 // @name         ΦΠΑ quick calculator (Greek VAT 24/13/6/4%)
 // @name:en      Greek VAT quick calculator
 // @namespace    axynos.local.fpa
-// @version      1.0.0
+// @version      1.1.0
 // @description  Μικρή αριθμομηχανή ΦΠΑ κάτω δεξιά σε κάθε σελίδα: γράψε ένα ποσό και βλέπεις αμέσως Καθαρό / ΦΠΑ / Σύνολο (και με τους δύο τρόπους). Alt+Q εστιάζει το πεδίο, κλικ σε μια τιμή την αντιγράφει.
 // @author       Anastasios Xynos (tasosxynos)
 // @license      MIT
@@ -158,9 +158,9 @@
         <div class="grid">
           <section class="col">
             <h4>με ΦΠΑ</h4>
-            <div class="row" data-k="wnet"><span class="lab">Καθαρό</span><span class="val" id="wNet">—</span></div>
             <div class="row" data-k="wvat"><span class="lab">ΦΠΑ</span><span class="val" id="wVat">—</span></div>
             <div class="row" data-k="wtot"><span class="lab">Σύνολο</span><span class="val" id="wTot">—</span></div>
+            <div class="row" data-k="wnet"><span class="lab">Καθαρό</span><span class="val" id="wNet">—</span></div>
           </section>
           <section class="col">
             <h4>χωρίς ΦΠΑ</h4>
@@ -177,9 +177,12 @@
   const $ = (id) => sh.getElementById(id);
   const wrap = sh.querySelector('.wrap');
   const amt = $('amt'), rateSel = $('rate'), parsedEl = $('parsed');
-  const eq = (a, b) => Math.abs(r2(a) - r2(b)) < 0.005;
+  // η μπλε γραμμή = το ζητούμενο ποσό κάθε στήλης:
+  //  αριστερά (το ποσό είναι με ΦΠΑ)  → Καθαρό (αφαιρείται ο ΦΠΑ)
+  //  δεξιά    (το ποσό είναι χωρίς ΦΠΑ) → Σύνολο (προστίθεται ο ΦΠΑ)
+  const HIGHLIGHT = new Set(['wnet', 'ntot']);
   const CELLS = [
-    ['wNet', 'wnet'], ['wVat', 'wvat'], ['wTot', 'wtot'],
+    ['wVat', 'wvat'], ['wTot', 'wtot'], ['wNet', 'wnet'],
     ['nNet', 'nnet'], ['nVat', 'nvat'], ['nTot', 'ntot'],
   ];
   let current = {};
@@ -208,7 +211,7 @@
     for (const [id, key] of CELLS) {
       const el = $(id);
       el.textContent = fmtEUR(current[key]);
-      el.parentElement.classList.toggle('hit', eq(current[key], v));   // η τιμή που έγραψες
+      el.parentElement.classList.toggle('hit', HIGHLIGHT.has(key));
     }
   }
 
